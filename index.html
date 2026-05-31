@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STARK INDUSTRIES | F.R.I.D.A.Y. v2.0</title>
+    <style>
+        :root {
+            --friday-red: #ff0033;
+            --friday-green: #00ffaa;
+            --bg: #050101;
+        }
+
+        /* Stark HUD Experience */
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(circle at center, #1a0505 0%, #050101 100%),
+                              url('https://transparenttextures.com');
+            color: var(--friday-red);
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        /* --- CRASH SCREEN --- */
+        #crash-screen {
+            position: fixed; inset: 0; background: #0000aa; color: #fff;
+            z-index: 100000; display: none; padding: 50px; font-family: monospace;
+            font-size: 1.2rem; line-height: 1.5;
+        }
+
+        .glitch {
+            animation: glitch-anim 0.2s infinite;
+            filter: hue-rotate(90deg) contrast(200%);
+        }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(-5px, -5px); }
+            100% { transform: translate(0); }
+        }
+
+        /* --- HUD ELEMENTS --- */
+        #reticle {
+            width: 40px; height: 40px; border: 1px solid var(--friday-red);
+            border-radius: 50%; position: fixed; pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+        #reticle::before { content: ''; position: absolute; top: 50%; width: 100%; height: 1px; background: var(--friday-red); }
+        #reticle::after { content: ''; position: absolute; left: 50%; height: 100%; width: 1px; background: var(--friday-red); }
+
+        #alert-overlay {
+            position: fixed; inset: 0; background: rgba(255, 0, 0, 0.3);
+            z-index: 10000; display: none; align-items: center; justify-content: center;
+            flex-direction: column; border: 20px solid var(--friday-red); backdrop-filter: blur(10px);
+        }
+
+        /* --- NAVIGATION --- */
+        #stark-nav {
+            background: rgba(0,0,0,0.8); border-bottom: 1px solid var(--friday-red);
+            padding: 15px 40px; display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(10px); z-index: 100;
+        }
+        .arc-reactor {
+            width: 50px; height: 50px; border: 2px solid var(--friday-red);
+            border-radius: 50%; position: relative; animation: spin 4s linear infinite;
+            box-shadow: 0 0 15px var(--friday-red);
+        }
+        .arc-inner { position: absolute; inset: 10px; border: 2px dashed var(--friday-green); border-radius: 50%; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* --- MAIN INTERFACE --- */
+        #main-frame { display: flex; flex: 1; overflow: hidden; perspective: 1000px; }
+
+        #sidebar {
+            width: 320px; background: rgba(40, 0, 0, 0.4);
+            border-right: 1px solid var(--friday-red); padding: 25px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .module {
+            background: rgba(255, 0, 51, 0.05); border: 1px solid var(--friday-red);
+            padding: 15px; position: relative; transition: 0.3s;
+        }
+
+        #viewport {
+            flex: 1; display: flex; flex-direction: column; padding: 20px;
+            transform: rotateY(-2deg); transform-style: preserve-3d;
+        }
+        #chat-window {
+            flex: 1; overflow-y: auto; padding: 20px; border: 1px solid rgba(255, 0, 51, 0.2);
+            background: rgba(0,0,0,0.3); scroll-behavior: smooth;
+        }
+        .msg { max-width: 85%; padding: 12px; margin-bottom: 15px; font-size: 14px; border-radius: 4px; border: 1px solid rgba(255, 0, 51, 0.1); }
+        .bot { border-left: 3px solid var(--friday-green); background: rgba(0, 255, 170, 0.05); color: #fff; }
+        .user { align-self: flex-end; border-right: 3px solid var(--friday-red); background: rgba(255, 0, 51, 0.05); color: #fff; text-align: right; }
+
+        .controls { display: flex; gap: 10px; padding-top: 20px; }
+        input {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--friday-red);
+            color: #fff; padding: 12px; flex: 1; outline: none; font-family: monospace;
+        }
+        button {
+            background: var(--friday-red); color: #fff; border: none;
+            padding: 10px 20px; font-weight: 900; letter-spacing: 2px; transition: 0.2s;
+        }
+        button:hover { background: var(--friday-green); color: #000; box-shadow: 0 0 20px var(--friday-green); }
+        
+        .critical { animation: blink 0.3s infinite; color: #fff !important; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="crash-screen">
+        <p>:( A problem has been detected and F.R.I.D.A.Y. has been shut down.</p>
+        <p>SYSTEM_THREAD_EXCEPTION_NOT_HANDLED (StarkOS.sys)</p>
+        <br>
+        <p>Technical Information: *** STOP: 0x000000FE</p>
+        <p>Contact Lead Architect: Rehaan Thakkar</p>
+    </div>
+
+    <div id="reticle"></div>
+    <div id="alert-overlay">
+        <h1 class="critical" style="font-size: 4rem;">FATAL ERROR</h1>
+        <h2 id="destruct-timer" style="font-size: 2rem;">PURGING SYSTEM: 05</h2>
+    </div>
+
+    <nav id="stark-nav">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <div class="arc-reactor"><div class="arc-inner"></div></div>
+            <h1 style="letter-spacing:10px; font-weight:200;">F.R.I.D.A.Y. <span style="font-weight:900;">AI</span></h1>
+        </div>
+        <div id="status">UPLINK: WAITING...</div>
+    </nav>
+
+    <div id="main-frame">
+        <aside id="sidebar">
+            <div class="module">
+                <span style="font-size:10px; letter-spacing:2px;">BOSS_IDENT_REQUIRED</span>
+                <input type="password" id="keyInput" placeholder="Neural Key">
+                <input type="password" id="passInput" placeholder="Override (20c)">
+                <button onclick="authorize()" style="width:100%; margin-top:10px;">ENGAGE</button>
+            </div>
+            <div class="module">
+                <p style="font-size:11px;">ARMOR: MK LXXXV<br>POWER: 100%<br>SCANNER: ACTIVE</p>
+            </div>
+        </aside>
+
+        <main id="viewport">
+            <div id="chat-window">
+                <div class="msg bot">Good morning, Boss. Systems are ready when you are.<br><br></div>
+            </div>
+            <div class="controls">
+                <input type="text" id="userInput" placeholder="What's the plan, Boss?" onkeydown="if(event.key==='Enter') send()">
+                <button onclick="send()">EXECUTE</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let OK = false;
+        const chat = document.getElementById('chat-window');
+        const reticle = document.getElementById('reticle');
+
+        document.addEventListener('mousemove', (e) => {
+            reticle.style.left = e.clientX + 'px';
+            reticle.style.top = e.clientY + 'px';
+        });
+
+        function addMsg(role, text) {
+            const m = document.createElement('div');
+            m.className = `msg ${role}`;
+            m.innerHTML = text;
+            chat.appendChild(m);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function authorize() {
+            const p = document.getElementById('passInput').value;
+            if(p === '20c') {
+                OK = true;
+                document.getElementById('status').innerText = "SYSTEMS: OPTIMIZED";
+                document.getElementById('status').style.color = "var(--friday-green)";
+                addMsg("bot", "Uplink confirmed. Systems are green, Boss.");
+            } else {
+                triggerCrash();
+            }
+        }
+
+        function triggerCrash() {
+            const overlay = document.getElementById('alert-overlay');
+            overlay.style.display = 'flex';
+            let count = 5;
+
+            const interval = setInterval(() => {
+                count--;
+                document.getElementById('destruct-timer').innerText = `PURGING SYSTEM: 0${count}`;
+                document.body.classList.toggle('glitch');
+
+                if(count <= 0) {
+                    clearInterval(interval);
+                    document.getElementById('crash-screen').style.display = 'block';
+                }
+            }, 1000);
+        }
+
+        function send() {
+            if(!OK) {
+                addMsg("bot", "<span style='color:var(--friday-green)'>Need that override first, Boss.</span>");
+                return;
+            }
+            const input = document.getElementById('userInput');
+            const val = input.value.trim();
+            if(!val) return;
+            addMsg("user", val);
+            input.value = "";
+            setTimeout(() => {
+                addMsg("bot", "Processing command... trajectory updated.");
+            }, 800);
+        }
+    </script>
+</body>
+</html>
